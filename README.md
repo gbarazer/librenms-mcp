@@ -292,6 +292,12 @@ MCP_HTTP_BEARER_TOKEN=
 - `bill_create_or_update`: Create or update a bill
 - `bill_delete`: Delete a bill
 
+### Oxidized Tools
+
+- `oxidized_list`: List devices tracked by Oxidized for config backup
+- `oxidized_config_get`: Get the stored configuration for a specific device
+- `oxidized_config_search`: Search all stored device configurations for a string
+
 ### Network & Monitoring Tools
 
 - `arp_search`: Search ARP entries

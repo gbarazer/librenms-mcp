@@ -8,6 +8,7 @@ from librenms_mcp.tools.inventory import register_inventory_tools
 from librenms_mcp.tools.locations import register_location_tools
 from librenms_mcp.tools.logs import register_logs_tools
 from librenms_mcp.tools.network import register_network_tools
+from librenms_mcp.tools.oxidized import register_oxidized_tools
 from librenms_mcp.tools.pollers import register_poller_tools
 from librenms_mcp.tools.ports import register_port_tools
 from librenms_mcp.tools.services import register_service_tools
@@ -24,6 +25,7 @@ def register_tools(mcp, config):
     register_location_tools(mcp, config)
     register_logs_tools(mcp, config)
     register_network_tools(mcp, config)
+    register_oxidized_tools(mcp, config)
     register_poller_tools(mcp, config)
     register_port_tools(mcp, config)
     register_service_tools(mcp, config)
