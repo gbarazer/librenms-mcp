@@ -18,6 +18,7 @@ from fastmcp.server.middleware.rate_limiting import SlidingWindowRateLimitingMid
 from fastmcp.server.transforms.search import BM25SearchTransform
 from fastmcp.server.transforms.search import RegexSearchTransform
 
+from librenms_mcp.access_log import AccessLogMiddleware
 from librenms_mcp.librenms_client import get_librenms_config_from_env
 from librenms_mcp.librenms_client import get_transport_config_from_env
 from librenms_mcp.sentry_init import init_sentry
@@ -138,6 +139,9 @@ def configure_tool_search() -> None:
 
 configure_component_visibility()
 configure_tool_search()
+
+# Access log: one line per tool call with the authenticated client identity
+mcp.add_middleware(AccessLogMiddleware())
 
 # Optional rate limiting
 if getattr(LNMS_CONFIG, "rate_limit_enabled", False):
