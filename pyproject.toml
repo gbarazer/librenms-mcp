@@ -55,6 +55,7 @@ dev = [
 
 [project.scripts]
 librenms-mcp = "librenms_mcp.server:main"
+librenms-mcp-tokens = "librenms_mcp.token_manager:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/librenms_mcp"]
@@ -131,6 +132,7 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S106", "S107"]  # Allow assert and hardcoded passwords in tests
+"src/librenms_mcp/token_manager.py" = ["T201"]  # The token manager CLI prints to stdout
 
 [tool.ruff.lint.isort]
 known-first-party = ["librenms_mcp"]

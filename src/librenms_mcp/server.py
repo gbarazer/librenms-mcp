@@ -21,6 +21,7 @@ from fastmcp.server.transforms.search import RegexSearchTransform
 from librenms_mcp.librenms_client import get_librenms_config_from_env
 from librenms_mcp.librenms_client import get_transport_config_from_env
 from librenms_mcp.sentry_init import init_sentry
+from librenms_mcp.token_manager import FileTokenVerifier
 from librenms_mcp.tools import register_tools
 
 # Load environment variables
@@ -63,19 +64,24 @@ except Exception as e:
     logger.error(f"Invalid configuration: {e}")
     raise
 
-# Create auth provider if bearer token is configured
+# Create auth provider if a tokens file or bearer token is configured
 auth_provider = None
-if getattr(TRANSPORT_CONFIG, "http_bearer_token", None):
-    bearer_token = TRANSPORT_CONFIG.http_bearer_token
-    if bearer_token:  # Type narrowing: ensures bearer_token is str, not None
-        auth_provider = StaticTokenVerifier(
-            tokens={
-                bearer_token: {
-                    "client_id": "authenticated-client",
-                    "scopes": ["read", "write"],
-                }
+tokens_file = getattr(TRANSPORT_CONFIG, "http_tokens_file", None)
+bearer_token = getattr(TRANSPORT_CONFIG, "http_bearer_token", None)
+if tokens_file:
+    # Per-client tokens managed with the librenms-mcp-tokens CLI; the file is
+    # re-read on every request so tokens can be added or revoked without a
+    # restart. A static MCP_HTTP_BEARER_TOKEN keeps working as a fallback.
+    auth_provider = FileTokenVerifier(tokens_file, static_token=bearer_token)
+elif bearer_token:
+    auth_provider = StaticTokenVerifier(
+        tokens={
+            bearer_token: {
+                "client_id": "authenticated-client",
+                "scopes": ["read", "write"],
             }
-        )
+        }
+    )
 
 # Initialize FastMCP server
 mcp = FastMCP(
@@ -152,12 +158,10 @@ def main():
         )
         raise SystemExit(1)
 
-    if (
-        TRANSPORT_CONFIG.transport_type in {"sse", "http"}
-        and not TRANSPORT_CONFIG.http_bearer_token
-    ):
+    if TRANSPORT_CONFIG.transport_type in {"sse", "http"} and auth_provider is None:
         logger.warning(
-            "WARNING: MCP_HTTP_BEARER_TOKEN is not set. The MCP server will run WITHOUT authentication. "
+            "WARNING: Neither MCP_HTTP_TOKENS_FILE nor MCP_HTTP_BEARER_TOKEN is set. "
+            "The MCP server will run WITHOUT authentication. "
             "Ensure the server is not exposed to untrusted networks (e.g. bind to 127.0.0.1 instead of 0.0.0.0)."
         )
 
@@ -168,7 +172,11 @@ def main():
         logger.info(
             f"Using HTTP SSE transport on {TRANSPORT_CONFIG.http_host}:{TRANSPORT_CONFIG.http_port}"
         )
-        if TRANSPORT_CONFIG.http_bearer_token:
+        if isinstance(auth_provider, FileTokenVerifier):
+            logger.info(
+                f"Token file authentication enabled for SSE transport ({auth_provider.tokens_file})"
+            )
+        elif TRANSPORT_CONFIG.http_bearer_token:
             logger.info("Bearer token authentication enabled for SSE transport")
 
         # Run with HTTP SSE transport
@@ -181,7 +189,11 @@ def main():
         logger.info(
             f"Using HTTP Streamable transport on {TRANSPORT_CONFIG.http_host}:{TRANSPORT_CONFIG.http_port}"
         )
-        if TRANSPORT_CONFIG.http_bearer_token:
+        if isinstance(auth_provider, FileTokenVerifier):
+            logger.info(
+                f"Token file authentication enabled for Streamable transport ({auth_provider.tokens_file})"
+            )
+        elif TRANSPORT_CONFIG.http_bearer_token:
             logger.info("Bearer token authentication enabled for Streamable transport")
 
         # Run with HTTP Streamable transport

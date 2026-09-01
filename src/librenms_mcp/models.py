@@ -54,3 +54,7 @@ class TransportConfig(BaseModel):
     http_bearer_token: str | None = Field(
         None, description="Bearer token for HTTP authentication"
     )
+    http_tokens_file: str | None = Field(
+        None,
+        description="Path to a JSON tokens file for per-client HTTP authentication",
+    )

@@ -539,6 +539,34 @@ curl -H "Authorization: Bearer your-secret-token" \
 
 **Note**: The HTTP transport requires proper JSON-RPC formatting with `jsonrpc` and `id` fields. The server may also require session initialization for some operations.
 
+#### Per-Client Tokens
+
+Instead of a single shared bearer token, you can manage one token per client (workstation, tool, teammate) with the `librenms-mcp-tokens` CLI. Tokens are stored in a JSON file that the server re-reads on every request, so generating or revoking a token takes effect immediately — no restart needed. Each request is authenticated with the token's ID as client identity, which shows up in server logs.
+
+Point the server at a tokens file:
+
+```env
+MCP_TRANSPORT=http
+MCP_HTTP_TOKENS_FILE=/data/tokens.json  # Enables per-client token authentication
+# MCP_HTTP_BEARER_TOKEN=...             # Optional: still accepted as a fallback
+```
+
+Manage tokens with the CLI (it uses `MCP_HTTP_TOKENS_FILE`, or pass `--file`):
+
+```sh
+# Generate a token for a client
+librenms-mcp-tokens generate --id "workstation-alice" --description "Alice's laptop"
+
+# List tokens (without values), show a token value, revoke a token
+librenms-mcp-tokens list
+librenms-mcp-tokens show --id "workstation-alice"
+librenms-mcp-tokens revoke --id "workstation-alice"
+```
+
+Clients authenticate exactly as with a shared token: `Authorization: Bearer lnms_...`. When running in a container, keep the tokens file on a mounted volume and manage it with e.g. `podman exec <container> librenms-mcp-tokens generate --id "workstation-alice"`.
+
+If both `MCP_HTTP_TOKENS_FILE` and `MCP_HTTP_BEARER_TOKEN` are set, tokens from the file are checked first and the static token remains valid as a fallback, which makes migrating existing clients painless.
+
 For more information on FastMCP transports, see the [FastMCP documentation](https://gofastmcp.com/deployment/running-server#transport-protocols).
 
 ## Contributing
