@@ -121,6 +121,8 @@ celerybeat.pid
 
 # Environments
 .env
+# Per-client bearer tokens (default file of the librenms-mcp-tokens CLI)
+.tokens
 .venv
 env/
 venv/
