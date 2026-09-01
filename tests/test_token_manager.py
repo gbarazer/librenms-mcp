@@ -106,7 +106,9 @@ async def test_file_token_verifier_static_token_fallback(tmp_path):
     assert access is not None
     assert access.client_id == "authenticated-client"
 
-    assert (await verifier.verify_token("lnms_valid")).client_id == "workstation-alice"
+    file_access = await verifier.verify_token("lnms_valid")
+    assert file_access is not None
+    assert file_access.client_id == "workstation-alice"
 
 
 @pytest.mark.asyncio
